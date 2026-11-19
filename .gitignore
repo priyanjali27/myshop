@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+shopping/node_modules/
+backend/node_modules/
+
+# Production builds (hosting platforms generate this during deployment)
+shopping/dist/
+
+# Environment variables (NEVER upload secrets or database passwords to GitHub)
+.env
+shopping/.env
+backend/.env
+
+# Logs & OS files
+*.log
+.DS_Store

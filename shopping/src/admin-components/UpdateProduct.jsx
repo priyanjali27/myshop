@@ -1,0 +1,185 @@
+import React, { useEffect, useState } from 'react'
+import LeftSidebar from './LeftSidebar'
+import { Link, useParams, useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { useAlert } from '../context/AlertContext'
+
+function UpdateProduct() {
+    const { showAlert } = useAlert();
+    const [formData, setFormData] = useState({
+        prod_name: '',
+        sku: '',
+        short_description: '',
+        description: '',
+        mark_price: '',
+        price: '',
+    })
+    const [existingImage, setExistingImage] = useState('')
+    const [newImage, setNewImage] = useState(null)
+    const [previewImage, setPreviewImage] = useState(null)
+    const { id } = useParams();
+    const goTo = useNavigate()
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get(`http://localhost:3000/api/admin/products/${id}`)
+                const { images, ...remainingFields } = response.data
+                setFormData(remainingFields)
+                if (images && images.length > 0) {
+                    setExistingImage(images[0].url);
+                }
+                // console.log(response.data)
+            } catch (err) {
+                console.log(err)
+            }
+        }
+        fetchData();
+    }, [id])
+
+
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        // console.log(file)
+        if (file) {
+            setNewImage(file);
+            setPreviewImage(URL.createObjectURL(file)); // Creates dynamic preview for new file
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const newFormData = new FormData();
+        for (const key in formData) {
+            newFormData.append(key, formData[key]);
+        }
+        console.log(newFormData)
+        if (newImage) {
+            newFormData.append('images', newImage)
+            // console.log(newFormData)
+        }
+        try {
+            const response = await axios.put(`http://localhost:3000/api/admin/products/${id}`, newFormData)
+            if (response.status === 200) {
+                if (newImage && response.data.images) {
+                    setExistingImage(response.data.images[0].url);
+                    setNewImage(null);
+                    setPreviewImage(null);
+                }
+                showAlert("Product Updated successfully!", 'success')
+                goTo('/allproducts')
+            }
+        } catch (error) {
+            console.log("Error in saving data:", error)
+            showAlert("Failed to save data", 'danger');
+        }
+    }
+    return (
+        <div className='d-flex wrapper'>
+            <LeftSidebar />
+            {/* <!-- Right Side Work Area --> */}
+            <main className="flex-grow-1 p-4" style={{ overflowY: "auto" }}>
+                {/* <!-- Header Section with Back Navigation & Action Actions --> */}
+                <div className="d-flex flex-wrap justify-content-between align-items-center pb-3 mb-4 border-bottom">
+                    <div className="d-flex align-items-center gap-3">
+                        {/* <a href="#" className="btn btn-outline-secondary btn-sm"><i className="bi bi-arrow-left"></i></a> */}
+                        <div>
+                            <nav aria-label="breadcrumb" className="mb-0">
+                                <ol className="breadcrumb small mb-1">
+                                    <li className="breadcrumb-item"><Link to="/allproducts" className="text-decoration-none">Products</Link></li>
+                                    <li className="breadcrumb-item active" aria-current="page">Update Product</li>
+                                </ol>
+                            </nav>
+                            <h1 className="h3 fw-semibold text-dark mb-0">Update Product</h1>
+                        </div>
+                    </div>
+                    {/* <div className="d-flex gap-2 mt-3 mt-sm-0">
+                        <button className="btn btn-outline-secondary">Cancel</button>
+                        <button type="submit" form="productForm" className="btn btn-primary">Save Product</button>
+                    </div> */}
+                </div>
+
+                {/* <!-- Form Content Setup inside Grid Systems --> */}
+                <form id="productForm" onSubmit={handleSubmit}>
+                    <div className="row g-4">
+
+                        {/* <!-- Left Primary Column (Inputs, Meta fields) --> */}
+                        <div className="col-12 col-lg-8">
+
+                            {/* <!-- Primary Specifications Card --> */}
+                            <div className="card border-0 shadow-sm mb-4">
+                                <div className="card-body p-4">
+                                    <h5 className="card-title fw-semibold mb-3">General Information</h5>
+                                    <div className="mb-3">
+                                        <label htmlFor="prod_name" className="form-label fw-semibold text-secondary">Product Title</label>
+                                        <input type="text" className="form-control" value={formData.prod_name} name="prod_name" onChange={handleChange} id="prod_name" required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="sku" className="form-label fw-semibold text-secondary">SKU</label>
+                                        <input type="text" className="form-control" value={formData.sku} name="sku" onChange={handleChange} id="sku" required />
+                                    </div>
+                                    <div className="mb-0">
+                                        <label htmlFor="short_description" className="form-label fw-semibold text-secondary">Short Description</label>
+                                        <textarea className="form-control" name="short_description" value={formData.short_description} onChange={handleChange} id="short_description" rows="3"></textarea>
+                                    </div>
+                                    <div className="mb-0">
+                                        <label htmlFor="description" className="form-label fw-semibold text-secondary">Description</label>
+                                        <textarea className="form-control" name="description" value={formData.description} onChange={handleChange} id="description" rows="5"></textarea>
+                                    </div>
+                                    <div className="mb-0">
+                                        <label htmlFor="productimage" className="form-label fw-semibold text-secondary">Images</label>
+                                        <input type="file" accept="image/*" className="form-control" name="productimage" onChange={handleFileChange} id="productimage"/>
+                                        {previewImage ? (
+                                            <img src={previewImage} alt="Preview" className="img-thumbnail mt-1 mb-2" style={{ maxHeight: '100px' }} />
+                                            ) : existingImage ? (
+                                            <img src={`http://localhost:3000${existingImage}`} alt="existingImage" className="img-thumbnail mt-1 mb-2" style={{ maxHeight: '100px' }} />
+
+                                            ) : (
+                                                <p className="text-muted small">No image uploaded</p>
+                                            )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* <!-- Pricing & Stock Metrics Card --> */}
+                            <div className="row g-4 mb-4">
+                                {/* <!-- Pricing Sub-section --> */}
+                                <div className="col-12 col-md-6">
+                                    <div className="card border-0 shadow-sm h-100">
+                                        <div className="card-body p-4">
+                                            <h5 className="card-title fw-semibold mb-3">Pricing</h5>
+                                            <div className="mb-3">
+                                                <label htmlFor="mark_price" className="form-label fw-semibold text-secondary">MRP</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text bg-light">₹</span>
+                                                    <input type="number" name="mark_price" className="form-control" value={formData.mark_price} onChange={handleChange} id="mark_price" step="0.01" placeholder="0.00" required />
+                                                </div>
+                                            </div>
+                                            <div className="mb-0">
+                                                <label htmlFor="price" className="form-label fw-semibold text-secondary">Selling Price</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text bg-light">₹</span>
+                                                    <input type="number" className="form-control" id="price" value={formData.price} onChange={handleChange} name="price" step="0.01" placeholder="0.00" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="d-flex gap-2 mt-3 mt-sm-0 justify-content-end">
+                                <button type="button" className="btn btn-outline-secondary" onClick={() => goTo(`/allproducts`)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Update Product</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </main>
+        </div>
+    )
+}
+
+export default UpdateProduct

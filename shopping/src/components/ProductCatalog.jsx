@@ -4,7 +4,6 @@ import Navigation from './Navigation'
 
 function ProductCatalog() {
   const [productList, setProductList] = useState([])
-
   const truncate = (str) => { return str.length > 10 ? str.substring(0, 40) + "..." : str }
 
   useEffect(() => {

@@ -18,7 +18,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/api/", productRoutes);
 app.use("/api/admin/", productAdminRoutes);
 
-const buildPath = path.join(__dirname, '../client/dist')
+const buildPath = path.join(__dirname, '../shopping/dist')
 app.use(express.static(buildPath))
 
 // 3. Catch-all route to handle React Router paths
